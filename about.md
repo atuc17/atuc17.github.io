@@ -4,8 +4,8 @@ title: About
 permalink: /about/
 ---
 
-Name: Le Quoc Dung
+Author: Le Quoc Dung
 
-Occupation: student in university
+Work: university student
 
 Github page: [atuc17](https://github.com/atuc17)
