@@ -3,24 +3,35 @@ layout: post
 title: Introduction to Cryptograph
 categories: [cryptography]
 ---
-Khi nhắc tới toán, hẳn nhiều bạn sẽ nghĩ: "Một môn học đầy công thức và tính toán nhức cả đầu". 
-Thực tế đúng là vậy =)))) Tất nhiên mật mã học, 1 lĩnh vực dựa trên toán, cũng gây đau đầu không kém.
+Mathematics is usually considered "A subject could cause headache with numberous equations". 
+Actually, it is =)))) Of course, **cryptography**, a subject based on mathematics, is also complicated.
 
-Nhưng mật mã bao quanh chúng ta, từ những trò chơi mật thư, đến kiểu gõ Telex tiếng Việt, những lá thư tình chả ai đọc được, hay thậm chí teencode. Trong lý thuyết thông tin, các hệ mật mã giúp bảo vệ an toàn và riêng tư cho người dùng internet, hoặc để tạo ra các mã độc tống tiền
-(wannacry). 
+In fact, cryptography appears around us. For instance: teencode, cryptogram. In information theory, 
+cryptography plays an important role in securing data on Internet, protecting privacy or even ransomware
+(WannaCry).
 
-Mật mã học (**cryptography**) là một lĩnh vực nghiên cứu các loại mật mã đã được phát minh, hoặc tạo ra mật mã mới, hoặc phá các loại mật mã.
-Có thể ban đầu hơi khó nhằn (đúng tính chất của nó), nhưng mình mong series này sẽ giúp các bạn tiếp cận được mật mã học và bổ sung 1 số kiến 
-thức cần thiết cho các project của các bạn.
+**Cryptography** is an area studying how cryptography algorithms and cryptosystems work, and find ways to invent 
+or break cryptosystems. It may be difficult at the beginning (actually it is), but I hope this series could help 
+you get access to cryptography and use knowledge to improve or secure your projects.
 
-Về các khái niệm và yếu tố của 1 hệ mật mã (**cryptosystem**), các bạn có thể tham khảo quyển ***Bài giảng An toàn và bảo mật thông tin*** 
-của Đại học Nha Trang. Ở đây mình xin phép giới thiệu các cách tiếp cận để phá các mật mã minh họa bằng các challenge CTF.
+A **cryptosystem** is like this.
 
-Như mình đã nói, mật mã học dựa trên toán, vì vậy 1 số kiến thức toán cơ bản các bạn có thể tìm hiểu trước khi vào series bao gồm:
-- Thuật toán Euclid/ Thuật toán Euclid mở rộng (**Extended Euclidean Algorithm**)
-- Định lý Euler/ Định lý Fermat nhỏ
-- Định lý số dư Trung Hoa (cách tìm nghiệm)
-- Các phép toán trên ma trận
+![cryptosystem](/assets/graph.png)
 
-Nếu chưa hiểu thì vẫn không sao, trong các bài mở đầu mình sẽ cố gắng giải thích. Mình mong các bạn sẽ có cái nhìn mới về mật mã học, 
-và tầm quan trọng của nó trong ngành mình (đặc biệt là các ngành IT).
+Explain: 
+- Plaintext: original message
+- Encrypt: the act of making message *unreadable* by using an algorithm, which makes message secure.
+- Key 1: used for encryption. The algorithm isn't secure itself, but the key. The algorithm combines the plaintext and the key to produce ciphertext that cannot be read.
+- Ciphertext): encrypted message.
+- Decrypt: the act of turning ciphertext to plaintext (reverse of encryption).
+- Key 2: used for decryption.
+
+If key 1 is as same as key 2, the algorithm is called symmetric-key algorithm. Otherwise, it is called asymmetric-key algorithm (or public-key algorithm).
+
+This blog will demonstrate how to break cryptosystem in CTF challenges by using knowledge in mathematics and IT. Therefore, it shows that making a good cryptography algorithm is really difficult but really exciting. There are several theories you should learn before starting cryptography. I will try my best to explain these theories in first writeups so that you can follow. Later you can do it by yourself. Basic theories are:
+- Euclidean Algorithm / Extended Euclidean Algorithm
+- Fermat / Euler theorem
+- Chinese Remainder Theorem (how to find solution)
+- Matrix
+
+Cryptography is fun! I hope you could enjoy its beauty :)))
