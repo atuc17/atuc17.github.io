@@ -6,11 +6,11 @@ categories: [cryptography]
 Mathematics is usually considered "A subject could cause headache with numberous equations". 
 Actually, it is =)))) Of course, **cryptography**, a subject based on mathematics, is also complicated.
 
-In fact, cryptography appears around us. For instance: teencode, cryptogram. In information theory, 
+In fact, cryptography appears around us such as teencode, cryptogram. In information theory, 
 cryptography plays an important role in securing data on Internet, protecting privacy or even ransomware
 (WannaCry).
 
-**Cryptography** is an area studying how cryptography algorithms and cryptosystems work, and find ways to invent 
+**Cryptography** is an area studying how cryptography algorithms and cryptosystems work, and finding ways to invent 
 or break cryptosystems. It may be difficult at the beginning (actually it is), but I hope this series could help 
 you get access to cryptography and use knowledge to improve or secure your projects.
 
