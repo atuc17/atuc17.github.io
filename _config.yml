@@ -2,7 +2,7 @@ title: Information Security Blog
 author: Quoc Dung Le
 email: dungle200020@gmail.com
 description: > # this means to ignore newlines until "show_excerpts:"
-  This blog has my researches in information security and writeups for CTF challenges. There are also some tutorials for students in Vietnam to study security. Sorry for my poor English. I welcome all contributions for contents and techniques in order to make posts better. Best regards!
+  This blog has my researches in information security and writeups for CTF challenges. There are also some tutorials for students or newbies studying security. Sorry for my poor English. I welcome all contributions for contents and techniques in order to make posts better. Best regards!
 
 show_excerpts: false # set to true to show excerpts on the homepage
 

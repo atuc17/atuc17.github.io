@@ -5,6 +5,8 @@ categories: [cryptography]
 ---
 Cryptography has appeared for along time ago, mostly in war.
 
+In this post, cipher is similar to algorithm, a way to encrypt or decrypt. However, cipher is simpler due to the way of encryption while algorithm is based on mathematics. Now we shall begin <3
+
 # Caesar cipher: the first cipher in the world.
 
 Our English alphabet looks like this
@@ -53,7 +55,7 @@ What does it mean? It means that key is only from 1 to 25 because of modulo 26. 
 
 As you can see, by trying all 25 keys, I find the 3 will decrypt the ciphertext to **CRYPTO**. Especially, messages decrypted from other keys don't have specific meaning. This is how Caesar cipher was broken.
 
-# Other cipher
+# Other ciphers
 
 In war, there was also a cryptography battle between inventors and breakers, which decided the winner in many battles in the past. Because Caesar had been broken, new cipher had to be invented to secure data.
 
@@ -66,7 +68,7 @@ There are many algorithms have been invented and many of them have been broken (
 - Rail fence cipher
 - ......
 
-May be you have seen one of these ciphers before, in cryptogram =)))) The problem here is that although many of them have been broken, you still couldn't break it because you don't know how it was encrypted.
+Perhaps, you have seen one of these ciphers before, in cryptogram or similar games =)))) The problem here is that if we don't know how the message was encrypted, we can't break it. In brief, it is a guesting game.
 
 *The more ciphers you know, the more posibilities you have to break cipher*
 
