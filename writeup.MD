@@ -1,7 +1,7 @@
 ---
 layout: page
-title: Cryptography
-permalink: /cryptography
+title: Writeup
+permalink: /writeup
 ---
 {% for category in site.categories %}
   {% if category[0] == "writeup" %}
