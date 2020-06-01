@@ -233,7 +233,7 @@ Tiếp đó, lệnh **mov    eax,DWORD PTR [ebp+0xc]** gán eax = [ebp + 0xc] = 
 
 Tổng kết ở đây, mình có mã giả C như sau:
 
-```C
+```c
 int func4(int x, int y, int z) {
    if (x > 7)
       return func4(x-1, y, z);
@@ -241,7 +241,7 @@ int func4(int x, int y, int z) {
 ```
 Lần này input cho **phase_4** mình để 8 2 để không dính đệ quy hồi nãy và nhảy tới **<func4+67>**. Ở **<func4+67>**, eax được gán là 7 ([ebp - 0xc]) và đem đi so sánh với [ebp + 0x8] (là 8 với input của mình). Nếu 7 <= x thì sẽ nhảy tới **<func4+106>**, không thì ........... lại 1 cái đệ quy khác :))) Thêm vào mã giả bên trên mình có:
 
-```C
+```c
 int func4(int x, int y, int z) {
    int local_c = y + 7; // [ebp - 0xc] = [ebp + 0xc] + 7, các bạn xem lại code bên trên
    if (x > 7)
@@ -277,7 +277,7 @@ Sau đó, eax được gán bởi **DWORD PTR [eax*4+0x804c180]**. Cái này có
 
 Dẹp! Mình chịu :((( Mình gõ **next** để tiếp tục debug thì eax đã thành 0xa. [ebp - 0x10] được cộng thêm eax, và [ebp - 0x14] tăng lên 1. Lúc nãy mình đã phân tích là [ebp - 0x14] sẽ được so sánh với 0x5 và nhảy lên **<phase_5+50>**. Từ đây mình có mã giả: 
 
-```C
+```c
 int local_10 = 0;
 int local_14 = 0;
 for (local_10 = 0; local_10 <= 5; local_10++) {
@@ -308,7 +308,7 @@ Phải có 1 cách kết hợp nào đó để tổng lại là 0x31. Nhưng mì
 | k | 0x5
 | l | 0xb
 
-Lúc này mình có khá đủ số rồi, mình tách 0x31 = 49 = 55-6 = 1+2+3+4+5+7+8+9+10 rồi nhóm 3 = 0x3, 1+8 = 0x9, 2+4 = 0x6, 5+7=0xc, 9 = 0x9 và 10 = 0xa. Dò ngược lại mình có chuỗi "gfbdfa".
+Lúc này mình có khá đủ số rồi, mình tách 0x31 = 49 = 55-6 = 1+2+3+4+5+7+8+9+10 rồi nhóm 3 = 0x3, 1+8 = 0x9, 2+4 = 0x6, 5+7 = 0xc, 9 = 0x9 và 10 = 0xa. Dò ngược lại mình có chuỗi "gfbdfa".
 
 Easy game!!! :)))
 
@@ -316,7 +316,162 @@ Easy game!!! :)))
 
 **NHƯNG**, mình hí hửng đi khoe đám bạn thì bị cười vô mặt :))) hóa ra còn 1 **secret_phase** nữa, mình đã không nghĩ tới điều này. Mình phải thừa nhận là cách làm này nhiều thứ không thể kiểm soát vì khó theo dõi function call.
 
-Các bạn mình bảo **secret_phase** nằm trong hàm **phase_difused**.
+Các bạn mình bảo **secret_phase** nằm trong hàm **phase_defused**.
+
+### Phase_defused
+
+Sau khi **disass phase_defused**, mình đặt breakpoint tại địa chỉ **0x080493fa** trong hàm này. Bắt đầu chạy chương trình. 
+
+Sau khi nhập input cho **phase_1**, tiếp tục enter thì gdb sẽ nhảy tới hàm **phase_defused**. Ở dòng **<phase_defused+17>** và **<phase_defused+23>**, eax và edx được gán bởi 2 biến toàn cục. Lúc này eax là 5 còn edx là 1 nên lệnh **jne** được thực thi, và sau đó thoát khỏi hàm.
+
+Tiếp tục chạy qua **phase_2**, khi gdb nhảy vào **phase_defused**, lần này eax vẫn là 5, còn edx đã lên 2. Tại sao???
+
+Mình chạy tiếp tới **phase_3**, lần này thì khi vào hàm đó, eax vẫn là 5 còn edx là 3. Nên mình khá chắc biến toàn cục được lưu vào eax là 5, và biến toàn cục lưu vào eax bắt đầu từ 0, và tăng 1 mỗi khi hàm **phase_i** đúng.
+
+Vậy thì mình chạy cho xong **phase_5** để xem nó sẽ làm gì nếu không thực thi **jne**. 
+
+![phase_defused](/assets/bomb/re16.png)
+
+Sau đó là 1 loạt các lệnh push :)))) Và hàm được gọi vẫn rất thân quen: **sscanf**. Nhưng mà có gì đó hơi lạ. Nếu viết ra mã giả thì lệnh đó sẽ là: **sscanf("7 0", "%d %d %s", "1 p 652", "%d %c %d");**. Nhưng hàm **sscanf** chỉ lấy tham số đầu là chuỗi giá trị và tham số thứ hai là format string. Tham số thứ 3 trở đi thường là biến, do ở đây là chuỗi hằng nên không có tác dụng gì.
+
+Sau đó, giá trị trả về của hàm này (gán trong **eax**), được so sánh với 3. Tới đây mình phát hiện ra mình đã *nhầm* ý nghĩa của giá trị trả về này =(((
+
+**Lưu ý**: giá trị trả về của hàm **sscanf** là số lượng "biến trong format string" được input từ tham số đầu tiên.
+
+Do đó, ở đây hàm trả về 2 (eax) vì format string cần 3 input là %d, %d và %s, trong khi đó mình chỉ có 7 và 0 =))) Tới đây dễ thấy 7 và 0 là input cho hàm **phase_4**. 
+
+Chạy lại chương trình, lần này mình input cho hàm **phase_4** là "7 0 hello". Lần này thì eax=3 và lệnh **jne** không thực thi =)))) 
+
+![phase_defused](/assets/bomb/re18.png)
+
+Chạy tiếp. Chuỗi *hello* được so sánh với chuỗi *DrEvil*. Thôi xong! Chạy lại lần nữa vậy :(((
+
+Sau khi pass được hàm so sánh chuỗi thì chương trình in ra là mình đã tìm ra **secret_phase**.
+
+### secret_phase
+
+![phase_defused](/assets/bomb/re19.png)
+
+Sau đó thì hàm **secret_phase** được gọi. Các bạn nhớ là phải đặt breakpoint trong hàm đó trước khi chạy lệnh call nếu không sẽ không xem được hàm đó. Ở đây mình đặt breakpoint ở dòng **read_line**.
+
+![phase_defused](/assets/bomb/re21.png)
+
+Ở đây mình cần nhập gì đó. Tinh ý một chút sẽ thấy ở dưới có hàm **atoi** để chuyển chuỗi sang số nên mình nhập số luôn để khỏi bug. Mình nhập 1234 :v và giá trị này được gán ở [ebp - 0x10].
+
+Sau đó chương trình so sánh giá trị (mình gọi là input) này với 0. Nếu input <= 0 thì nhảy tới **explode_bomb**. Tiếp theo, nếu input > 0x3e9 thì không thực hiện lệnh **jle**, đồng nghĩa việc sẽ tới lệnh kế tiếp là **explode_bomb**. Ở đây input của mình lớn hơn 0x3e9 nên fail.
+
+**Lưu ý**: nãy giờ mình đặt breakpoint ở hàm **phase_defused** từ lúc mới chạy chương trình, nên mỗi lần xong 1 phase là hàm này được gọi. Nhưng mình chi cần lần gọi hàm cuối cùng (sau **phase_5**) thôi. Vì vậy sau khi **phase_5** kết thúc, mình mới đặt breakpoint cho hàm này và gõ lệnh **next** để nhảy vào hàm (các bạn nhớ khởi động lại gdb trước).
+
+Sau đó khi sắp tới lệnh **secret_phase** thì **disass secret_phase** và đặt breakpoint. Mình đặt ở dòng **read_line**.
+
+![phase_secret](/assets/bomb/re22.png)
+
+Ở đây chưa vào hàm **secret_phase**, enter 2 lần nữa là vào được. Lần này mình nhập số nhỏ thôi: 15 :v
+
+![phase_secret](/assets/bomb/re23.png)
+
+Ầy, thêm 1 hàm **fun7** nữa. Tham số là ký tự '$' và số 15 của mình. Ở đây mình cũng **disass fun7**, đặt breakpoint tại **0x08048f85** và gõ **next** để nhảy vào hàm. 
+
+#### Hàm func7
+
+Đầu tiên hàm so sánh [ebp + 0x8] (ở đây là '$') với 0. Nếu không bằng thì nhảy tới **<fun7+19>**, ngược lại thì gán eax là 0xffffffff (là -1) và nhảy tới **<fun7+97>** (các bạn note lại vị trí này).
+
+2 lệnh mov tiếp theo chủ yếu là để gán [ebp + 0x8] (ký tự '$') vào eax dưới dạng *ký tự*. Và mang đi so sánh với [ebp + 0xc] (là 15). Nếu nhỏ hơn hoặc bằng thì nhảy tới **<fun7+54>** (note lại vị trí này). 
+
+Ở đây 0x24 > 15 nên không nhảy. Chương trình tới lệnh kế tiếp **0x8048f9c <fun7+29>: mov    eax,DWORD PTR [ebp+0x8]**, ở đây eax được gán bởi con trỏ tới '$'. Lệnh kế tiếp gán eax bởi giá trị con trỏ ở vị trí **eax (cũ) + 4**. Nói đơn giản là ta có 1 chuỗi ký tự bắt đầu bởi '$'.
+
+Sau đó, [ebp + 0xc] (là 15) và eax được push vào stack, làm tham số cho hàm **fun7**. Tổng kết lại mình có mã giả như sau:
+
+```c
+int fun7(char a, int b) {
+   if (a == 0) { // so sánh [ebp + 0x8] với 0
+      eax = -1;
+      jmp **<fun7+97>**
+   }
+   if (a <= b) 
+      nhảy tới **<fun7+54>
+   else 
+      gọi hàm fun7(*(&a + 4), b);
+}  
+```
+
+Tới đây thì hơi loạn rồi. Làm sao để biết chừng nào đệ quy mới dừng? Mình phải hardcore đọc assembly chay thôi :(((
+
+Các bạn **disass fun7** để xem lại hàm lần nữa. Hiện tại mình đang ở vị trí **0x08048fa9 <+42>** (gọi đệ quy). Nhìn xuống dưới, sau khi hàm kết thúc, giá trị trả về được lưu trong eax. Sau đó chương trình nhân đôi eax (**add eax, eax**) và jump tới **<fun7+97>** (lúc nãy đã note lại :v)
+
+Kéo tới đó xem thử. Ahhhh, lệnh **leave** và **ret**. Kết thúc hàm!
+
+Viết lại mã giả:
+
+```c
+int fun7(char a, int b) {
+   if (a == 0) { // so sánh [ebp + 0x8] với 0
+      // eax = -1;
+      return -1;
+   }
+   if (a <= b) 
+      nhảy tới **<fun7+54>**
+   else 
+      return 2 * fun7(*(&a + 4), b);
+}  
+```
+
+Bây giờ xem vị trí **<fun7+54>**, tương tự như bên trên là so sánh *ký tự* [ebp + 0x8] với số ở [ebp + 0xc] (hiện vẫn là 15) (lệnh **<+59>**). 
+
+- Nếu không bằng thì nhảy tới **<fun7+71>** và gọi hàm **fun7** với tham số là *(&a+8) và b.  Kết quả trả về là eax sau đó được tính toán, trở thành 2 * eax + 1 và return giá trị này.
+- Ngược lại thì gán eax là 0 và trả về giá trị này
+
+Mã giả hiện tại của mình:
+
+```c
+int fun7(char a, int b) {
+   if (a == 0) { // so sánh [ebp + 0x8] với 0
+      // eax = -1;
+      return -1;
+   }
+   if (a <= b) { // fun7+54
+      if (a != b)
+         return 2 * fun7(*(&a + 8), b) + 1;
+      else
+         return 0;
+   }
+   else 
+      return 2 * fun7(*(&a + 4), b);
+}  
+```
+
+Chạy lại chương trình từ đầu. Khi tới hàm **secret_phase** mình vẫn nhập là 15. 
+
+Do 0x24 > 15 nên chương trình sẽ gọi đệ quy **fun7** với tham số là *(&a+4) và 15 như vầy:
+
+![secret_phase](/assets/bomb/re24.png)
+
+Khi chạy tới lời gọi hàm, tham số là 0x8 và 0xf (15). Nếu mình gọi hàm, thì con trỏ lệnh sẽ nhảy về vị trí breakpoint của lời gọi hàm đó. Tức là:
+
+| | | | Ghi chú |
+| fun7(0x24, 15) | | | |
+| ===> | Nhảy tới breakpoint **0x8048f85** | | |
+| ===> | Gọi hàm fun7(0x8, 15) | 0x8 nằm ở vị trí (địa chỉ của 0x24) + 4| |
+| | ===> | Nhảy tới breakpoint **0x8048f85** trong lời gọi hàm fun7(0x8, 15) | |
+| | ===> | Gọi hàm fun7(0x16, 15) | ở đây 0x16 ở vị trí (địa chỉ của 0x8) + 8 | |
+| | | ===> | Nhảy tới breakpoint **0x8048f85** trong lời gọi hàm fun7(0x16, 15) |
+| | | ===> | Gọi hàm fun7(0x14, 15) | ở đây 0x15 nằm ở vị trí (địa chỉ của 0x16) + 4 |
+
+Tiếp theo là lời gọi hàm fun7(0, 15) (0 ở vị trí (địa chỉ 0x14) + 4).
+
+Vậy thì mình có mảng [0x24, 0x8, số gì đó, 0x16, 0x14, 0]. Gõ lệnh **stop** để dừng chương trình và chạy lại với lệnh **start**. 
+
+Để tìm *số gì đó* ở vị trí (địa chỉ 0x24 + 8), mình cần nhập 1 số lớn hơn 0x24=36. Mình nhập 40 xem sao.
+
+Ok, *số gì đó* ở đây là 0x32, làm tham số cho lời gọi hàm đệ quy. Nếu các bạn xem lại hàm **secret_phase**, kết quả trả về của hàm **fun7** sẽ phải bằng 2. Để ý 1 chút, hàm **fun7** sẽ trả về 0, 2u hoặc 2u+1 (với u là giá trị trả về của **fun7**). Tức là nếu mình cần 2 thì phải có 2 = 2 * 1 = 2 * (2 * 0 + 1) =))))
+
+Đi từ ngoài vào trong, vì giá trị 2 * 0 + 1 sau đó sẽ được đem nhân với 2, nghĩa là mình cần 1 số x nào đó mà 0x24 > x. Lúc này tham số đầu của đệ quy sẽ là (địa chỉ 0x24) + 4 là 0x8. Tiếp theo, 2 * 0 + 1 là lời gọi đệ quy, mình cần 0x8 < x và tham số đầu của lần đệ quy kế tiếp là (địa chỉ 0x8) + 8 là 0x16. Cuối cùng, để lời gọi đệ quy là 0 thì tham số thứ 2 phải bằng 0x16 (ở đây 0x16 thỏa điều kiện 0x8 < 0x16 < 0x24).
+
+Vậy là xong. Cám ơn các bạn đã đọc :)))
+
+![result](/assets/bomb/re25.png)
+
+Thứ tự input như sau:
 
 I am just a renegade hockey mom.
 
@@ -324,6 +479,8 @@ I am just a renegade hockey mom.
 
 1 p 652
 
-7 0
+7 0 **DrEvil**
 
 gfbdfa
+
+22
