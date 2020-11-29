@@ -1,0 +1,163 @@
+---
+layout: post
+title: Chương 4 - MÃ HÓA TRÊN ĐƯỜNG CONG ELLIPTIC (Phần 2)
+categories: [cryptography]
+---
+# Phần 2: Đường cong Elliptic trên trường $$\mathbb{Z}_p$$
+
+Phần này sử dụng thuật toán Euclid mở rộng được đề cập ở [phụ lục 3](../16/Appendix-3.html)
+
+## I. Định nghĩa và khái niệm
+
+Đường cong Elliptic trên trường $$\mathbb{Z}_p$$ là đường cong có các hệ số thuộc $$\mathbb{Z}_p$$, có dạng:
+
+$$y^2 \; \text{mod p} = (x^3 + ax + b) \; \text{mod p}$$, với $$a, b, x, y \in \mathbb{Z}_p$$
+
+Tương tự khái niệm điểm đối xứng qua $$Ox$$ trên số thực, elliptic $$\mathbb{Z}_p$$ cũng đối xứng theo modulo. Nghĩa là, nếu $$(x, y)$$ là điểm trên elliptic thì $$(x, p-y)$$ là đối xứng của nó trong modulo $$p$$ và điểm này cũng thuộc elliptic
+
+Tương tự nhóm Abel $$E(a, b)$$ trên elliptic số thực, ta định nghĩa nhóm Abel $$E_p(a, b)$$ trên elliptic $$\mathbb{Z}_p$$ cùng điểm vô cực $$O$$.
+
+- 1) Điểm $$O$$ là phần tử đơn vị của phép cộng: $$P + O = O + P = P$$
+
+- 2) Phần tử nghịch đảo của $$P$$ trong phép cộng là $$-P$$. Như vậy $$P + (-P) = O$$
+
+- 3) Với 2 điểm $$P$$, $$Q$$ bất kì, phép cộng $$R = P+Q$$ được xác định bởi:
+
+$$\begin{align*}
+x_R &= \Delta ^ 2 - x_P - x_Q \; mod \; p \\
+y_R &= \Delta (x_P - x_R) - y_P \; mod \; p
+\end{align*}$$
+
+Trong đó, $$\Delta = \begin{cases}
+\frac{y_Q - y_P}{x_Q - x_P} \; \text{mod p,} & \; nếu \; P \neq Q \\
+\frac{3{x_P}^2 + a}{2y_P} \; \text{mod p,} & \; nếu \; P = Q
+\end{cases}$$
+
+Lưu ý rằng ở đây phép chia trong modulo $$p$$ là nghịch đảo trong modulo $$p$$.
+
+Bây giờ mình sẽ tới phần *"căng thẳng"*, mình sẽ code 1 module tính toán trên Elliptic bằng python 3.
+
+## II. Cài đặt trên python 3
+
+### 1. Class EllipticCurve
+
+Ở đây mình định nghĩa lớp EllipticCurve với 3 tham số là a, b và p tương ứng trong phương trình đường Elliptic
+
+~~~python
+class EllipticCurve(object):
+	def __init__(self, a, b, p):
+		self.a = a
+		self.b = b
+		self.p = p
+~~~
+
+### 2. Class Point
+
+Lớp này cần xử lý nhiều hơn. Tất cả các phép tính sẽ được định nghĩa trong lớp này. Đầu tiên mình khai báo class, tham số của Point sẽ gồm: EllipticCurve, hoành độ x và tung độ y.
+
+```python
+class Point(object):
+	def __init__(self, E: EllipticCurve, x: int, y: int):
+		if x != 0 or y != 1:
+			assert (y*y) % E.p == (x**3 + E.a * x + E.b) % E.p, "Point doesn't belong to this curve"
+		self.x = x
+		self.y = y
+		self.a = E.a
+		self.b = E.b
+		self.p = E.p
+```
+
+Ở đây mình định nghĩa điểm vô cực là điểm **(0, 1)**. Dựa trên công thức của phép cộng, mình cần 1 hàm để tính nghịch đảo số a trong modulo n dùng thuật toán Euclid mở rộng.
+
+```python
+def inverse_mod(self, a, n):
+	x0, x1 = 1, 0
+	y0, y1 = 0, 1
+	b = n
+	while b:
+		q = a // b
+		a, b = b, a - q * b
+		x0, x1 = x1, x0 - q * x1
+		y0, y1 = y1, y0 - q * y1
+	if a == 1:
+		return x0 % n
+```
+
+Tiếp theo, mình overwrite toán tử **+** để có thể dùng dấu **+** cộng 2 Point lại với nhau.
+
+```python
+def __add__(self, other): # self tương ứng P còn other tương ứng Q
+	if self == INFINITY:
+		return other # nếu P là điểm vô cực thì trả về Q
+	elif other == INFINITY:
+		return self # Tương tự bên trên nhưng trả về P
+	elif (self.y + other.y) % self.p == 0:
+		return INFINITY # Nếu 2 điểm đối xứng nhau thì tổng là điểm vô cực
+	else:
+		if self != other: # Khi P khác Q
+			delta = ((other.y - self.y) * self.inverse_mod(other.x - self.x, self.p)) % self.p
+		else: # Khi P = Q
+			delta = ((3 * self.x * self.x + 2) * self.inverse_mod(2 * self.y, self.p)) % self.p
+		xR = delta * delta - self.x - other.x
+		yR = delta * (self.x - xR) - self.y
+        # Trả về điểm có tọa độ vừa tính được, nằm trên cùng Elliptic
+		return Point(EllipticCurve(self.a, self.b, self.p), xR % self.p, yR % self.p)
+```
+
+Vậy là mình cơ bản đã định nghĩa xong class **Point**. Bây giờ ra ngoài test thử xem có đúng không:
+
+```python
+E = EllipticCurve(1, 2, 17)
+INFINITY = Point(E, 0, 1) # định nghĩa điểm vô cực ở ngoài
+P = Point(E, 1, 2)
+Q = Point(E, 3, 7)
+R = P+Q
+print(R.x, R.y)
+```
+
+Đoạn code này trả về (15, 14), nếu tự tính mình cũng nhận được kết quả tương tự. Vậy hàm tính tổng 2 Point của mình vẫn ổn =)))
+
+Có 1 điều mình cần lưu ý rằng mình đã định nghĩa hàm **__add__** làm cả 2 nhiệm vụ là cộng 2 điểm khác nhau và 2 điểm giống nhau. Thường thì người khác sẽ code hàm **add** và hàm **double** làm 2 công việc đó.
+
+Lý do có việc này đó là: không phải lúc nào chúng ta cũng chỉ cộng 2 điểm bất kì mà trong mật mã học, người ta quan tâm tới kết quả của phép tính $$Q = nP = P + P +....+P$$ (với $$n$$ số $$P$$). Khi làm việc với các trường số nguyên tố lớn, dù đã có cả $$P$$ lẫn $$Q$$ thì cũng rất khó tính được $$n$$. Đây chính là điểm bảo mật của phương pháp mã hóa đường cong Elliptic
+
+Bài toán tìm số $$n$$ thỏa mãn $$Q = nP$$ với $$P$$, $$Q$$ là 2 điểm cho trước trên elliptic được gọi là bài toán logarith rời rạc trên đường cong elliptic (*Elliptic Curve Discrete Logarithm Problem* - *ECDLP*). Mình sẽ đề cập các phương pháp tấn công elliptic sau.
+
+Như đã nói ở trên, trong mật mã học người ta thường làm việc trên các trường số nguyên tố lớn. Như vậy ta vẫn có thể tính $$nP$$ được bằng cách cộng dồn bình thường, có điều sẽ mất thời gian. Do đó 1 thuật toán đơn giản đã được sử dụng để tăng tốc độ tính toán lên gọi là **thuật toán double-and-add** (*double-and-add algorithm*)
+
+**Input**: điểm $$P$$ thuộc elliptic $$\mathbb{Z}_p$$ và số nguyên $$n \geq 1$$
+- Bước 1: Đặt $$Q = P$$ và $$R = O$$
+- Bước 2: Lặp khi $$n > 0$$:
+    - Bước 3: Nếu $$n \equiv 1 \; \text{mod 2}$$, đặt $$R = R+Q$$
+    - Bước 4: Đặt $$Q = 2Q$$
+    - Bước 5: $$n = \lfloor n/2 \rfloor$$ và quay lại Bước 2
+- Bước 6: Trả về điểm $$R$$ là kết quả của $$nP$$
+
+Bổ sung hàm **__mul__** vào class **Point** như sau:
+
+```python
+def __mul__(self, n: int):
+	Q = self
+	R = INFINITY
+	while n > 0:
+		if n % 2 == 1:
+			R = R + Q
+		Q = Q + Q # mình code add và double chung
+		n //= 2
+	return R
+```
+
+Bây giờ mình cơ bản đã hoàn thành cài đặt đường cong Elliptic trên python 3. Nhưng.......
+
+Thực ra có khá nhiều thư viện để xử lý đường cong Elliptic, trong đó mình thích nhất Sagemath. Và mình tốn công cài đặt đường cong này là để giải thích cấu trúc hoạt động cũng như thuật toán liên quan. Dù sao hiểu rõ bản chất vẫn tốt hơn script-kiddie nhỉ :)))) Nhưng, tin mình đi, sẽ có lúc phải nhớ lại cách cài đặt đó :))))
+
+## III. Một số khái niệm mở rộng
+
+Do $$\mathbb{Z}_p$$ là trường hữu hạn nên đường cong elliptic chỉ có 1 số hữu hạn điểm. Số điểm trên đường cong elliptic được ký hiệu là $$\#E$$. Định lý sau cho ta 1 *ước lượng* về số lượng điểm trên elliptic.
+
+<!-- prettier-ignore -->
+**Định lý Hasse**: cho $$E$$ là elliptic trên $$\mathbb{Z}_p$$ và gọi $$\#E$$ là số điểm trên elliptic trường $$\mathbb{Z}_p$$. Khi đó $$\#E (\mathbb{Z}_p) = p+1-t_p$$, với $$|t_p| \leq 2 \sqrt{p}$$. Số điểm của đường cong $$\#E$$ còn được gọi là **order** (cấp) của elliptic (xem trong [phụ lục 1](../16/Appendix-1.html))
+
+Để tìm số điểm trên đường cong elliptic ta có thể vét cạn tất cả các điểm có hoành độ từ 0 tới $$p-1$$. Tuy nhiên nếu $$p$$ lớn thì đây không phải việc khả thi. May mắn là chúng ta có thuật toán nhanh hơn là **thuật toán Schoof**. Hiện tại mình chưa tìm hiểu về thuật toán này.
+
+Phần kế tiếp mình sẽ nói về các ứng dụng của mã hóa đường cong Elliptic. Tại [đây](Elliptic-3.html)

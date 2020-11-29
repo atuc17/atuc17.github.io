@@ -1,0 +1,58 @@
+---
+layout: post
+title: Chương 4 - MÃ HÓA TRÊN ĐƯỜNG CONG ELLIPTIC (Phần 3)
+categories: [cryptography]
+---
+# Phần 3: Các ứng dụng của mã hóa trên đường cong Elliptic
+
+## I. Trao đổi khóa Diffie-Hellman
+
+Đây là phương pháp rất hay được sử dụng để trao đổi khóa cho 1 thuật toán mã hóa đối xứng (AES, DES, ...). Giả sử có 2 người là Alice và Bob muốn trao đổi khóa cho nhau. Công việc này được thực hiện như sau:
+
+#### 1. Public parameter creation
+
+Alice và Bob thống nhất 1 số nguyên tố lớn $$p$$, 1 đường cong Elliptic và 1 điểm $$G$$ thuộc đường cong elliptic đó ($$G$$ gọi là generator). Alice và Bob cũng có thể chống mạo danh (*man-in-the-middle attack*) bằng cách nhờ 1 tổ chức đáng tin cậy nào đó tạo 3 thành phần mình vừa nêu và gửi cho cả 2 (bằng digital certificate hay các cách khác).
+
+#### 2. Private computation
+
+- Alice chọn 1 số bí mật $$n_A$$ và tính $$Q_A = n_A.G$$
+
+- Bob chọn 1 số bí mật $$n_B$$ và tính $$Q_B = n_B.G$$
+
+#### 3. Publlic exchange
+
+- Alice gửi $$Q_A$$ cho Bob
+
+- Bob gửi $$Q_B$$ cho Alice
+
+#### 4. Final private computation
+
+- Alice có $$n_A$$ và $$Q_B$$ từ Bob nên tính được $$n_A.Q_B = n_A.n_B.G$$
+
+- Bob có $$n_B$$ và $$Q_A$$ từ Alice nên tính được $$n_B.Q_A = n_B.n_A.G$$
+
+Như vậy, Alice và Bob đều có $$n_A.n_B.G$$ và có thể dùng nó làm key cho các thuật toán đối xứng hoặc mục đích khác.
+
+Điểm an toàn ở phương pháp này là, giả sử người thứ 3 là Trudy đứng giữa Alice và Bob *bắt* được $$Q_A$$ và $$Q_B$$ cũng không thể tìm ra $$n_A.n_B.G$$ vì với 2 điểm đó, Trudy chỉ có thể tính $$Q_A + Q_B = (n_A + n_B)G \neq n_A.n_B.G$$. Muốn tính ra $$n_A.n_B.G$$ thì Trudy phải có 1 trong 2 số $$n_A$$, $$n_B$$, điều mà rất khó thực hiện như mình đã đề cập ở phần trước.
+
+## II. Chữ ký số dùng Elliptic (Elliptic Curve Signature)
+
+Đầu tiên ta chọn 1 số nguyên tố lớn $$p$$, 1 elliptic $$E$$ trên $$\mathbb{Z}_p$$ và 1 điểm $$G$$ trên $$E$$ với *order* nguyên tố lớn q.
+
+- Bước 1: Chọn 1 số bí mật $$1 < s < q - 1$$
+- Bước 2: Tính $$V = sG \in E(\mathbb{Z}_p)$$ và **công khai** $$V$$
+- Bước 3: Chọn tài liệu (document) $$d \; \text{mod q}$$
+- Bước 4: Chọn 1 số ngẫu nhiên $$e \; \text{mod q}$$
+- Bước 5: Tính $$eG \in E(\mathbb{Z}_p)$$ và $$s_1 \equiv x(eG) \; \text{mod q}$$ và $$s_2 = (d + ss_1)e^{-1} \; \text{mod q}$$. **Công khai** signature $$(s_1, s_2)$$.
+- Bước 6: **Chứng thực**. Ta tính $$v_1 = d s_2^{-1} \; \text{mod q}$$ và $$v_2 = s_1 s_2^{-1} \; \text{mod q}$$. Từ đó tính $$v_1G + v_2V \in E(\mathbb{Z}_p)$$ và kiểm tra $$x(v_1G+v_2V) \; \text{mod q } = s_1$$.
+
+**Chứng minh**: 
+
+$$\begin{align*}
+v_1 G + v_2 V &= d{s_2}^{-1}G + s_1 s_2^{-1}V \\
+&= d{s_2}^{-1}G + s_1 s_2^{-1}sG \\
+&= (d + s_1s) s_2^{-1}G \\
+&= es_2 s_2^{-1}G \\
+&= eG \in E(\mathbb{Z}_p)
+\end{align*}$$ 
+
